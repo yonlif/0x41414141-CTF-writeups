@@ -65,15 +65,16 @@ Lets indeed overwrite `banned`: payload = `globals['banned'] = 'string_we_are_ne
 Great! The second payload [can be whatever we want](https://i.imgur.com/pEq5Ohz.jpg) it to be.   
 Now for the second payload. We cannot use `open` since the `open` function is part of the python `__builtins__`, a function that is built in in the laguage, and when running `exec` with `'__builtins__': {}` all of our built in function s were removed.
 So what next? After a quick google search "How to restore builtins" you will arrive to [this stackoverflow answer](https://stackoverflow.com/a/25824045/7501501) that says that each python module contains builtin for itself! 
-In the globals we see we can access the `re module` lets try to use the open function from this module's builtins: second payload = `print(globals['re'].__builtins__['open'])`
+In the globals we see we can access the `re module` lets try to use the open function from this module's builtins:   
+second payload = `print(globals['re'].__builtins__['open'])`
 
 ```python
 <built-in function open>
 ```
 
-Once again, success, now we can use any builtin function we want, even importing other modules: `globals['re'].__builtins__['__import__']('os')` after messing around with `os` to find the flag in the file system we find that the path is `/flag.txt`, let's print it:
+Once again, success, now we can use any builtin function we want, even importing other modules: `globals['re'].__builtins__['__import__']('os')`, after messing around with `os` to find the flag in the file system we find that the path is `/flag.txt`, let's print it:
 
-payload 1: `globals['banned'] = 'string_we_are_never_going_to_use'`
+payload 1: `globals['banned'] = 'string_we_are_never_going_to_use'`   
 payload 2: `__builtins__ = globals['re'].__builtins__; print(__builtins__['open']('/flag.txt', 'rb').read());`
 
 ### Flag:
