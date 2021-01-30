@@ -1,4 +1,4 @@
-# eazy RSA:
+# eazy RSA
 
 #### Description:
 ```
