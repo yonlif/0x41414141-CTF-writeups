@@ -47,7 +47,7 @@ pop_eax & Tango
 At the end of the CTF, 95 teams solved this challenge and it was worth 437 points.
 
 ## Solution:
-We first read the code carfully, notice we have two payloads to enter the code and we assume that we need to read a file in order to win.   
+We first read the code carefully, notice we have two payloads to enter the code and we assume that we need to read a file in order to win.   
 There are two checks that payload needs to pass, first check makes sure the payload does not contain the words `import`, `chr`, `os` etc. and the second check is quite basic and we can ignore it for now. 
 Let's create the first payload with intention to remove the bounderies for the second payload, unlike in C when running an `exec` command we can interact with the variables of the progam, 
 this means we can try to overwrite the `banned` or the `search_func` variables. Global python variables are saved in the `globals` dictionary, when printing it (payload = `print(globals)`) we recive:
