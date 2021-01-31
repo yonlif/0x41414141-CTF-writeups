@@ -153,7 +153,6 @@ The name of the function that generates the seeds called `prng_lcg` - a `lcg` is
 and it is unsafe, it appears that using a pen and paper we can predict the next number.
 
 Let's take 3 seeds from the server and call them `s1`, `s2` and `s3`. Now write `s2` and `s3` as a function of `s1`, `s2`, `c`, `m`, `n`:
-= ((s1 * m + c) * m + c) % n = (s1 * m * m + c * m + c) % n
 ```
 s2 = (s1 * m + c) % n
 s3 = (s2 * m + c) % n 
