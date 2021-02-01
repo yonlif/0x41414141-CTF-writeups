@@ -258,18 +258,88 @@ These are some very large biases, the correlative probabilities are:
 As long as they are far from 0.5 it is good.
 
 That is all very nice but we have more than one sbox - how can we tell what is the probabilty the cipher itself will act linearly on a given mask? The answer is that it is `0.5 + 2 ** (number of sboxes - 1) * [the multiplication of the fraction biases of each sbox]`. 
-So now we just take a input, and look at in under the input and output mask and we can tell the key? It is all depends on the probabilty - given a linear equations of input and output mask with probabilty `0.5 + b` we need `1 / b ** 2` inputs and outputs to show in a significant way that the key that appears for the most times is indeed the correct key 
-(try to remember the example with one key stage - add an sbox that is nearly linear and see that not in all of the cases you get the correct key).
+So now we just take a input, and look at in under the input and output mask and we can tell the key? It is all depends on the probabilty - given a linear equations of input and output mask with probabilty `0.5 + b` we need `1 / b ** 2` inputs and outputs to show in a significant way that the key that appears for the most times is indeed the correct key (this can be shown using some math - show that normal distribution of random equalities is smaller than the biased normal distribution in a high chance).    
+In order to convince yourself about this paragraph - try to remember the example with one key stage - add an sbox that is nearly linear and see that not in all of the cases you get the correct key.
 
-Ok, let's create a real linear equation - for example let's say the input mask is:
+
+### Find 8 bits of key 
+Ok, enough technical background, let's create a linear equation with one input bit and one output bit - for example let's say the input mask is:
 ```
 00000001,00000000,00000000,00000000,00000000,00000000,00000000,00000000
 ```
 Now follow the permutation we can tell that the output bit (and mask) is:
 ```
+00000001,00000000,00000000,00000000,00000000,00000000,00000000,00000000 ->
+00000000,00000000,00000000,00000000,00000000,00000100,00000000,00000000 ->
+00000000,00000000,00001000,00000000,00000000,00000000,00000000,00000000 ->
 00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000010
 ```
-The probablity of this to happen is `8 * -0.3515625 * -0.3359375 * -0.359375 * 0.3671875 = -0.12467712163925171` so we need at least `64.33191289696227` plain texts to find the correct key from that the linear equation.
+output mask:
+```
+00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000010
+```
+The probablity of this to happen is `8 * -0.3515625 * -0.3359375 * -0.359375 * 0.3671875 = -0.12467712163925171` so we need at least `64.33191289696227` plaintexts and ciphertexts pairs to find the correct key from that the linear equation.   
+Now we know that if we will pass 64 plaintext and ciphertext we will get that most of the outputs will have the same pairty in at the input with the input mask and at the output with the output mask. This also should apply for the cipher between stages - in one before last stage the bit here:
+```
+00000000,00000000,00001000,00000000,00000000,00000000,00000000,00000000
+```
+Should also have the same pairty as the bit in the start, we are going to use that! Let's guess the 8 key bits of the last key that when tracing them back lead to the third byte sbox. We know that under the mask `00001000` in the third byte we need to have the same pairty as with the input. If we guess these key bits correctly and decrypt one stage backwards the ciphertexts in the correct bits positions we should see this pretty clearly. But if we guess the wrong key and decrypt the ciphertexts we will just get random pairty and the linear equation will be biased as it should.
 
+Take a moment to soke the last paragraph in, it is the most complicated yet once you get this "ha ah moment" linear cryptanalysis and the rest of the 120 bits are in your pocket.
 
+Let's see a bit of code:
+```python
+# List of pairs plaintext, ciphertext on length greater than 64, in practice I made this 500, just to be on the safe side (we do have 2 ** 16 of those). 
+paris = [(pt, ct)]  
+# masks of the input and one stage before the last
+input_bit, one_before_output_bit = b'\x10\x00\x00\x00\x00\x00\x00\x00', b'\x20\x00\x00\x00\x00\x00\x00\x00'
 
+# Save all the biases
+all_results = []
+# Guessing 8 bits of key
+for key_guess in tqdm(range(SBOX_OUTPUT_SIZE)):
+    # Count the bias
+    results = Counter()
+    for pt, ct in pairs:
+        # Decrypt the ciphertext
+        unperm_ct = pn._rev_perm(ct)
+        un_sbox = list(unperm_ct)
+        # From now on we only care about the sbox in location 0
+        un_sbox[0] = pn._rev_single_sbox(un_sbox[0] ^ key_guess)
+        un_sbox = bytes(un_sbox)
+        
+        # byte_and perform and operation between two byte arrays, pairty calculates the pairty of the bits
+        if parity(byte_and(pt, input_bit)) == parity(byte_and(un_sbox, one_before_output_bit)):
+            results.update(['equal'])
+        else:
+            results.update(['not equal'])
+    all_results.append(results)
+# Find the largest biases
+possible_keys = sorted([(r['equal'], i) for i, r in enumerate(all_results)] +
+                       [(r['not equal'], i) for i, r in enumerate(all_results)], reverse=True)
+print(possible_keys)
+guessed_key = possible_keys[0][1]
+```
+The variable `guessed_key` contains 8 bits, we can perform `pn.apply_perm(bytes([255] + [0] * 7))` to tell where these bits belone in the final key:
+```
+01000011,00000000,00000000,00100011,00000000,00000100,00000000,01000000
+```
+And sure enough when looking at these bits in `key[4]` and looking at `pn.apply_perm(bytes([guessed_key] + [0] * 7))`:
+```
+01000011,00000000,00000000,00100011,00000000,00000100,00000000,01000000
+ |    ||                     |   ||               |             |       
+00000001,00000000,00000000,00100001,00000000,00000000,00000000,01000000
+00110001,00110101,00110001,00110001,00111001,00111000,01100110,01100100
+```
+All the bits in the right locations match.   
+Do this 7 more times with the correct payloads and you will find the `keys[4]` than decrypt all of the cipher texts one stage and repeat the process.
+
+Thanks for reading so far, there are more simple ways of doing what I describe but in this path I hope you really understood the basics of linear cryptanalysis.
+
+## Flag:
+```
+flag{151121d998fdb1a9}
+```
+
+#### writeup author:
+*Yonlif*
