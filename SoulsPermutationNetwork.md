@@ -283,7 +283,7 @@ Now we know that if we will pass 64 plaintext and ciphertext we will get that mo
 ```
 00000000,00000000,00001000,00000000,00000000,00000000,00000000,00000000
 ```
-Should also have the same pairty as the bit in the start, we are going to use that! Let's guess the 8 key bits of the last key that when tracing them back lead to the third byte sbox. We know that under the mask `00001000` in the third byte we need to have the same pairty as with the input. If we guess these key bits correctly and decrypt one stage backwards the ciphertexts in the correct bits positions we should see this pretty clearly. But if we guess the wrong key and decrypt the ciphertexts we will just get random pairty and the linear equation will be biased as it should.
+Should also have the same pairty as the bit in the start, we are going to use that! Let's guess the 8 key bits of the last key that when tracing them back lead to the third byte sbox. We know that under the mask `00001000` in the third byte we need to have the same pairty as with the input. If we guess these key bits correctly and decrypt one stage backwards the ciphertexts in the correct bits positions we should see this pretty clearly. But if we guess the wrong key and decrypt the ciphertexts we will just get random pairty and the linear equation will not be biased as it should.
 
 Take a moment to soke the last paragraph in, it is the most complicated yet once you get this "ha ah moment" linear cryptanalysis and the rest of the 120 bits are in your pocket.
 
